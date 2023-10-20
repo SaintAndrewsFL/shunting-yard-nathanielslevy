@@ -6,12 +6,14 @@ import java.util.Queue;
 
 public class ShuntingYard {
 
-    static Stack<String> stack = new Stack<>();
-    static Queue<String> queue = new LinkedList<>();
 
    public static String infixToPostFix(String expression) {
+       Stack<String> stack = new Stack<>();
+       Queue<String> queue = new LinkedList<>();
+       if (! isValidExpression(expression)) {
+           return "Please enter valid expression!";
+       }
        while (! expression.equals("")) {
-           System.out.println(stackToString(stack));
            String curr = getNext(expression);
            expression = expression.substring(1);
            if (isInteger(curr)) {
@@ -22,6 +24,7 @@ public class ShuntingYard {
                    stack.add(curr);
                } else if (getValue(stack.peek()) >= getValue(curr)) {
                    queue.add(stack.pop());
+                   stack.push(curr);
                }
            }
            if (curr.equals("(")) {
@@ -46,7 +49,26 @@ public class ShuntingYard {
        }
 
 
-  //  public static String postFixToInfix(String expression) {}
+    public static String postFixToInfix(String expression) {
+
+       Stack<String> stack = new Stack<>();
+       while (!expression.equals("")) {
+           String curr = getNext(expression);
+           if (getValue(curr) == -1) {
+               stack.push(curr);
+           } else {
+               String s1 = stack.pop();
+               String s2 = stack.pop();
+               stack.push("(" + s2 + curr + s1 + ")");
+           }
+           expression = expression.substring(1);
+       }
+       String output = "";
+       for (String x : stack) {
+           output += x;
+       }
+       return output;
+   }
 
     public static boolean isValidExpression(String expressionToCheck) {
         int numParenthesis = 0;
@@ -64,8 +86,6 @@ public class ShuntingYard {
             }
             //  its not an integer and its not a symbol and its not a parenthesis
             if ((! isInteger(curr) && getValue(curr) == -1) && (! curr.equals("(")) && (! curr.equals(")"))) {
-                System.out.println("Value: " + getValue(curr));
-                System.out.println("current is: " + curr);
                 return false;
             }
             if (numParenthesis < 0) {
@@ -89,7 +109,34 @@ public class ShuntingYard {
     }
 
     public static double evaluatePostFix(String expression) {
-        return 0;
+        Stack<String> stack = new Stack<>();
+        while (! expression.equals("")) {
+            String curr = getNext(expression);
+            if (getValue(curr) == -1) {
+                stack.push(curr);
+            }
+            else {
+                double operator1 = Double.parseDouble(stack.pop());
+                double operator2 = Double.parseDouble(stack.pop());
+                if (curr.equals("+")) {
+                    stack.push((operator1 + operator2) + "");
+                }
+                else if (curr.equals("-")) {
+                    stack.push((operator2 - operator1) + "");
+                }
+                else if (curr.equals("*")) {
+                    stack.push((operator1 * operator2) + "");
+                }
+                else if (curr.equals("/")) {
+                    stack.push((operator2 / operator1) + "");
+                }
+                else if (curr.equals("^")) {
+                    stack.push((Math.pow(operator2, operator1)) + "");
+                }
+            }
+            expression = expression.substring(1);
+        }
+        return Double.parseDouble(stack.pop());
     }
 
     public static int getValue(String symbol) {
