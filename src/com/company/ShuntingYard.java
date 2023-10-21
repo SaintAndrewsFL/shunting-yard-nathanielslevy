@@ -5,15 +5,13 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class ShuntingYard {
-
-
    public static String infixToPostFix(String expression) {
        Stack<String> stack = new Stack<>();
        Queue<String> queue = new LinkedList<>();
        if (! isValidExpression(expression)) {
            return "Please enter valid expression!";
        }
-       while (! expression.equals("")) {
+       while (!expression.isEmpty()) {
            String curr = getNext(expression);
            expression = expression.substring(1);
            if (isInteger(curr)) {
@@ -22,8 +20,10 @@ public class ShuntingYard {
            if (getValue(curr) != -1) {
                if (stack.isEmpty() || getValue(stack.peek()) < getValue(curr)) {
                    stack.add(curr);
-               } else if (getValue(stack.peek()) >= getValue(curr)) {
-                   queue.add(stack.pop());
+               } else {
+                   while (! stack.isEmpty() && getValue(stack.peek()) >= getValue(curr)) {
+                       queue.add(stack.pop());
+                   }
                    stack.push(curr);
                }
            }
@@ -50,9 +50,11 @@ public class ShuntingYard {
 
 
     public static String postFixToInfix(String expression) {
-
+       if (! isValidPostFix(expression)) {
+           return "Invalid expression";
+       }
        Stack<String> stack = new Stack<>();
-       while (!expression.equals("")) {
+       while (!expression.isEmpty()) {
            String curr = getNext(expression);
            if (getValue(curr) == -1) {
                stack.push(curr);
@@ -72,10 +74,24 @@ public class ShuntingYard {
 
     public static boolean isValidExpression(String expressionToCheck) {
         int numParenthesis = 0;
-        if (expressionToCheck.equals("")) {
+        if (expressionToCheck.isEmpty()) {
             return false;
         }
-        while (! expressionToCheck.equals("")) {
+        int numOperands = 0;
+        int numOperators = 0;
+        for (int i = 0; i < expressionToCheck.length(); i++) {
+            String c = expressionToCheck.charAt(i) + "";
+            if (isOperand(c)) {
+                numOperands++;
+            }
+            if (isOperator(c)) {
+                numOperators++;
+            }
+        }
+        if (numOperands - 1 != numOperators) {
+            return false;
+        }
+        while (!expressionToCheck.isEmpty()) {
             String curr = getNext(expressionToCheck);
             expressionToCheck = expressionToCheck.substring(1);
             if (curr.equals("(")) {
@@ -84,33 +100,30 @@ public class ShuntingYard {
             if (curr.equals(")")) {
                 numParenthesis--;
             }
-            //  its not an integer and its not a symbol and its not a parenthesis
             if ((! isInteger(curr) && getValue(curr) == -1) && (! curr.equals("(")) && (! curr.equals(")"))) {
                 return false;
             }
             if (numParenthesis < 0) {
                 return false;
             }
-            if (! expressionToCheck.equals("")) {
+            if (!expressionToCheck.isEmpty()) {
                 if ((getValue(curr) != -1) && getValue(expressionToCheck.substring(0,1)) != -1) {
                     return false;
-                // if current isn't a symbol is the same value as if the next char is an integer
                 }
                 if ((isInteger(curr)) && isInteger(expressionToCheck.substring(0,1))) {
                     return false;
-                    // if current isn't a symbol is the same value as if the next char is an integer
                 }
             }
         }
-        if (numParenthesis == 0) {
-            return true;
-        }
-        return false;
+        return numParenthesis == 0;
     }
 
     public static double evaluatePostFix(String expression) {
+       if (! isValidPostFix(expression)) {
+           throw new IllegalArgumentException("Invalid expression");
+       }
         Stack<String> stack = new Stack<>();
-        while (! expression.equals("")) {
+        while (!expression.isEmpty()) {
             String curr = getNext(expression);
             if (getValue(curr) == -1) {
                 stack.push(curr);
@@ -128,6 +141,9 @@ public class ShuntingYard {
                     stack.push((operator1 * operator2) + "");
                 }
                 else if (curr.equals("/")) {
+                    if (operator1 == 0) {
+                        throw new IllegalArgumentException("Invalid expression: Cannot divide by 0");
+                    }
                     stack.push((operator2 / operator1) + "");
                 }
                 else if (curr.equals("^")) {
@@ -159,8 +175,7 @@ public class ShuntingYard {
     }
 
     public static String getNext(String x) {
-        String firstChar = x.charAt(0) + ""; // Get the first character
-        return firstChar;
+        return x.charAt(0) + "";
     }
 
     public static String stackToString(Stack<?> stack) {
@@ -176,5 +191,51 @@ public class ShuntingYard {
 
         sb.append("]");
         return sb.toString();
+    }
+
+    private static boolean isOperand(String token) {
+        return token.matches("[0-9]+");
+    }
+
+    private static boolean isOperator(String token) {
+        return "+-*/^".contains(token) && token.length() == 1;
+    }
+
+    public static boolean isValidPostFix(String expression) {
+        int numParenthesis = 0;
+        if (expression.isEmpty()) {
+            return false;
+        }
+        int numOperands = 0;
+        int numOperators = 0;
+        for (int i = 0; i < expression.length(); i++) {
+            String c = expression.charAt(i) + "";
+            if (isOperand(c)) {
+                numOperands++;
+            }
+            if (isOperator(c)) {
+                numOperators++;
+            }
+        }
+        if (numOperands - 1 != numOperators) {
+            return false;
+        }
+        while (!expression.isEmpty()) {
+            String curr = getNext(expression);
+            expression = expression.substring(1);
+            if (curr.equals("(")) {
+                numParenthesis++;
+            }
+            if (curr.equals(")")) {
+                numParenthesis--;
+            }
+            if ((! isInteger(curr) && getValue(curr) == -1) && (! curr.equals("(")) && (! curr.equals(")"))) {
+                return false;
+            }
+            if (numParenthesis < 0) {
+                return false;
+            }
+        }
+        return numParenthesis == 0;
     }
 }
